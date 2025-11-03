@@ -2,7 +2,7 @@ import mlflow
 import mlflow.sklearn
 import requests
 
-def log_train_data(training_dict, curr_week):
+def log_model_train_info(training_dict, curr_week):
     with mlflow.start_run(run_name=f"week_{curr_week}") as run:
         for key, value in training_dict.items():
             if isinstance(value, (int, float)):
