@@ -5,11 +5,9 @@ import re
 def parse_duration(duration_str):
     if pd.isna(duration_str):
         return np.nan
-    
     match = re.match(r"(?:(\d+)h)?\s*(?:(\d+)m)?", str(duration_str))
     if not match:
         return np.nan
-
     hours = int(match.group(1)) if match.group(1) else 0
     minutes = int(match.group(2)) if match.group(2) else 0
     return hours * 60 + minutes
@@ -22,15 +20,29 @@ def format_duration(minutes):
     m = minutes % 60
     return f"{h}h {m:02d}m"
 
+# --- Chargement et nettoyage ---
 data = pd.read_csv("data/Flights.csv")
 data['price'] = data['price'].astype(str).str.replace(',', '.').pipe(pd.to_numeric, errors='coerce')
+
+# Création colonne 'week'
+data['date'] = pd.to_datetime(data['date'], errors='coerce')
+data['week'] = data['date'].dt.isocalendar().week
+
 data_drifted = data.copy()
 
 # Numerical drift : increase price
-data_drifted.loc[data_drifted['week'] >= 8, 'price'] *= 1.3
+data_drifted.loc[data_drifted['week'] >= 8, 'price'] *= 2
+
+# --- Temporal: increase in duration
+data_drifted.loc[data_drifted['week'] >= 8, 'time_taken'] = (
+    (data_drifted['time_taken'].apply(parse_duration) * 1.5).apply(format_duration)
+)
+
+# Numerical drift : increase price
+data_drifted.loc[data_drifted['week'] >= 10, 'price'] *= 0.3
 
 # Categorical : overrepresentation of a company
-mask = data_drifted['week'] >= 8
+mask = data_drifted['week'] >= 11
 data_drifted.loc[mask, 'airline'] = np.where(
     np.random.rand(mask.sum()) < 0.7,
     'Emirates',
@@ -38,8 +50,14 @@ data_drifted.loc[mask, 'airline'] = np.where(
 )
 
 # --- Temporal: increase in duration
-data_drifted.loc[data_drifted['week'] >= 8, 'time_taken'] = (
-    (data_drifted['time_taken'].apply(parse_duration) * 1.25).apply(format_duration)
+data_drifted.loc[data_drifted['week'] >= 9, 'time_taken'] = (
+    (data_drifted['time_taken'].apply(parse_duration) * 0.75).apply(format_duration)
 )
+
+# --- Categorical drift: convert all Business -> Economy from week 11 onward
+mask_w11 = data_drifted['week'] >= 11
+is_business = data_drifted['Class'].astype(str).str.strip().str.lower() == 'business'
+data_drifted.loc[mask_w11 & is_business, 'Class'] = 'Economy'
+
 
 data_drifted.to_csv("data/Flights_drifted.csv", index=False)
