@@ -13,6 +13,18 @@ ML pipeline with continuous training, monitoring, and automated deployment.
 - Model optimization (pruning, quantization)
 - REST API deployment
 
+## Setup docker - FastAPI Server
+
+```
+# build image
+docker build -t flight-api -f docker/Dockerfile .
+
+# run container
+docker run -p 8000:8000 flight-api
+
+# access API
+http://localhost:8000/docs
+```
 ## Plan Proposition
 GitHub Repo → GitHub Actions → MLflow (VM) → FastAPI (VM)
 
