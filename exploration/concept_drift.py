@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import ks_2samp, wasserstein_distance
 
-def load_predictions(path=".", pattern=r"predictions_test_w(\d+).csv"):
+def load_predictions(path="exploration/", pattern=r"predictions_test_w(\d+).csv"):
     predictions = []
     for fname in os.listdir(path):
         match = re.match(pattern, fname)

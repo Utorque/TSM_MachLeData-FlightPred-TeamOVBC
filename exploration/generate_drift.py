@@ -2,6 +2,9 @@ import pandas as pd
 import numpy as np
 import re
 
+def parse_convert_price(x):
+    return float(str(x).replace(",", "").strip())
+
 def parse_duration(duration_str):
     if pd.isna(duration_str):
         return np.nan
@@ -22,7 +25,7 @@ def format_duration(minutes):
 
 # --- Chargement et nettoyage ---
 data = pd.read_csv("data/Flights.csv")
-data['price'] = data['price'].astype(str).str.replace(',', '.').pipe(pd.to_numeric, errors='coerce')
+data["price"] = data["price"].apply(parse_convert_price)
 
 # Création colonne 'week'
 data['date'] = pd.to_datetime(data['date'], errors='coerce')

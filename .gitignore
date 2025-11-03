@@ -2,3 +2,5 @@ venv/
 data/
 report/
 .DS_Store
+mlruns/
+**/__pycache__/
