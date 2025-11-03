@@ -97,9 +97,9 @@ def main():
     if df_train.empty or df_test.empty:
         raise ValueError("Jeu d'entraînement ou de test vide après découpe par semaines.")
 
-    print(f"📆 Semaines d'entraînement: {train_weeks}")
-    print(f"🧪 Semaine de test: {test_week}")
-    print(f"📊 Lignes: train={len(df_train)} | test={len(df_test)}")
+    print(f"Semaines d'entraînement: {train_weeks}")
+    print(f"Semaine de test: {test_week}")
+    print(f"Lignes: train={len(df_train)} | test={len(df_test)}")
 
     # 4) Sélection des features / cible
     target = "price"
@@ -152,7 +152,7 @@ def main():
     rmse = sqrt(mean_squared_error(y_test, y_pred))
     r2 = r2_score(y_test, y_pred)
 
-    print("\n📈 Résultats (semaine de test = {})".format(test_week))
+    print("\nRésultats (semaine de test = {})".format(test_week))
     print(f"MAE  : {mae:.2f}")
     print(f"RMSE : {rmse:.2f}")
     print(f"R²   : {r2:.4f}")
@@ -161,12 +161,12 @@ def main():
     out_path = args.model_out or f"xgb_model_train_w{train_weeks[0]}-w{train_weeks[-1]}_test_w{test_week}.pkl"
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, out_path)
-    print(f"💾 Modèle sauvegardé : {out_path}")
+    print(f"Modèle sauvegardé : {out_path}")
 
     # 9) (Optionnel) Sauvegarde prédictions
     preds_path = f"predictions_test_w{test_week}.csv"
     pd.DataFrame({"y_true": y_test.values, "y_pred": y_pred}).to_csv(preds_path, index=False)
-    print(f"📝 Prédictions sauvegardées : {preds_path}")
+    print(f"Prédictions sauvegardées : {preds_path}")
 
 
 if __name__ == "__main__":
