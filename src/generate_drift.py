@@ -5,11 +5,9 @@ import re
 def parse_duration(duration_str):
     if pd.isna(duration_str):
         return np.nan
-    
     match = re.match(r"(?:(\d+)h)?\s*(?:(\d+)m)?", str(duration_str))
     if not match:
         return np.nan
-
     hours = int(match.group(1)) if match.group(1) else 0
     minutes = int(match.group(2)) if match.group(2) else 0
     return hours * 60 + minutes
@@ -22,8 +20,14 @@ def format_duration(minutes):
     m = minutes % 60
     return f"{h}h {m:02d}m"
 
+# --- Chargement et nettoyage ---
 data = pd.read_csv("data/Flights.csv")
 data['price'] = data['price'].astype(str).str.replace(',', '.').pipe(pd.to_numeric, errors='coerce')
+
+# Création colonne 'week'
+data['date'] = pd.to_datetime(data['date'], errors='coerce')
+data['week'] = data['date'].dt.isocalendar().week
+
 data_drifted = data.copy()
 
 # Numerical drift : increase price
