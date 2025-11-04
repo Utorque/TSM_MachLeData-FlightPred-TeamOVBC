@@ -3,7 +3,7 @@ import mlflow.sklearn
 import requests
 
 def log_model_train_info(training_dict, curr_week):
-    with mlflow.start_run(run_name=f"week_{curr_week}") as run:
+    with mlflow.start_run(run_name=f"log_train_week_{curr_week}", nested=True):
         for key, value in training_dict.items():
             if isinstance(value, (int, float)):
                 mlflow.log_metric(key, value)

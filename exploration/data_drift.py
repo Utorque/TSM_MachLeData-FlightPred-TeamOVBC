@@ -8,6 +8,11 @@ from scipy.stats import ks_2samp, chi2_contingency, wasserstein_distance
 from evidently import Report
 from evidently.presets import DataDriftPreset
 
+def parse_convert_price(x):
+    indian_ruppes_price = float(str(x).replace(",", "").strip())
+    chf_price = indian_ruppes_price * 0.0091
+    return chf_price
+
 def calculate_psi(expected, actual, bins=10):
     if len(expected) < 5 or len(actual) < 5:
         return np.nan 
@@ -112,9 +117,6 @@ def rolling_drift(data, report_path, print_evidently):
 
     weeks = sorted(data['week'].unique())
 
-    # Do not consider weeks as it is incomplete
-    weeks.remove(6)
-
     all_results = []
     for i in range(len(weeks) - 1):
         ref_w, cur_w = weeks[i], weeks[i + 1]
@@ -147,9 +149,6 @@ def expanding_drift(data, report_path, print_evidently):
         os.makedirs(report_path, exist_ok=True)
 
     weeks = sorted(data['week'].unique())
-
-    # Do not consider weeks as it is incomplete
-    weeks.remove(6)
 
     all_results = []
     for i in range(2, len(weeks)):
@@ -240,9 +239,9 @@ if __name__=='__main__':
     else:
         data = pd.read_csv('data/Flights_drifted.csv')
 
-    report_root_folder = f'report/{mode}'
+    report_root_folder = f'report/data_drift_exploration/{mode}'
 
-    data['price'] = data['price'].astype(str).str.replace(',', '.').pipe(pd.to_numeric, errors='coerce')
+    data["price"] = data["price"].apply(parse_convert_price)
 
     rolling_report_path = f'{report_root_folder}/rolling/'
     expanding_report_path = f'{report_root_folder}/expanding/'
