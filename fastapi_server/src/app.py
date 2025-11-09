@@ -14,6 +14,10 @@ import base64
 
 # Add utils to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../utils'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+
+DATA_PATH = r"../../data/Flights.csv"
+
 from mlflow_server import test_and_promote
 
 # Global model cache
@@ -23,9 +27,7 @@ def load_production_model():
     """Load the latest production model from MLflow registry"""
     client = MlflowClient()
 
-    # Search for all models with Production stage
     try:
-        # Get all registered models
         registered_models = client.search_registered_models()
 
         production_model = None
@@ -33,12 +35,10 @@ def load_production_model():
 
         for rm in registered_models:
             model_name = rm.name
-            # Look for flight_model_week_X pattern
             if "flight_model_week_" in model_name:
                 try:
                     week_num = int(model_name.split("_")[-1])
 
-                    # Get latest version in Production stage
                     versions = client.search_model_versions(f"name='{model_name}'")
                     for version in versions:
                         if version.current_stage == "Production":
@@ -46,7 +46,7 @@ def load_production_model():
                                 latest_week = week_num
                                 production_model = {
                                     "name": model_name,
-                                    "version": version.version,
+                                    "version": str(version.version),  # Convert to string
                                     "week": week_num
                                 }
                 except (ValueError, IndexError):
@@ -248,7 +248,7 @@ def promote_model(week: int):
     """
     try:
         # Run test and promotion
-        test_and_promote(week)
+        test_and_promote(week, DATA_PATH)
 
         # Reload the model after promotion
         load_production_model()
@@ -322,7 +322,7 @@ def upload_model(data: ModelUpload):
         else:
             # Run promotion logic
             try:
-                test_and_promote(data.week)
+                test_and_promote(data.week, DATA_PATH)
                 # Check if it was promoted
                 updated_versions = client.search_model_versions(f"name='{model_name}'")
                 for v in updated_versions:
