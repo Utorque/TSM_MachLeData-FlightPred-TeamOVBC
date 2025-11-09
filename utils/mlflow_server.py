@@ -1,4 +1,4 @@
-from .data_loader import load_data
+from data_loader import load_data
 import mlflow
 import mlflow.sklearn
 from sklearn.metrics import mean_squared_error, r2_score

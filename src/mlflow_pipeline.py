@@ -27,6 +27,6 @@ with mlflow.start_run(run_name=f'week_{CURR_WEEK}') as parent_run:
         # TODO adapt following part
         model = train_model(train_data,CURR_WEEK)
         # evaluate_model(model)
-        # post_new_model('http://mlflow-server:5000', curr_week=CURR_WEEK)
+        post_new_model('http://localhost:8000', curr_week=CURR_WEEK)
     else:
         print('No significant drift - do not retrain model')
