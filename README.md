@@ -2,6 +2,12 @@
 
 ML pipeline with continuous training, monitoring, and automated deployment.
 
+## Run pipeline
+
+```
+python (or python3) -m "src.mlflow_pipeline"
+```
+
 ## Dataset
 [Kaggle - Flight Price Prediction](https://www.kaggle.com/datasets/shubhambathwal/flight-price-prediction)
 
