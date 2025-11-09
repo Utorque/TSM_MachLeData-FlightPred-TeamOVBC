@@ -1,6 +1,9 @@
 import mlflow
 import mlflow.sklearn
 import requests
+import joblib
+import io
+import base64
 
 def log_model_train_info(training_dict, curr_week):
     with mlflow.start_run(run_name=f"log_train_week_{curr_week}", nested=True):
@@ -13,18 +16,28 @@ def log_model_train_info(training_dict, curr_week):
         mlflow.log_metric("num_samples", training_dict.get("num_samples", 0))
     return "training"
 
-def post_new_model(MLFLOW_SERVER, curr_week):
-    model_uri = f"runs:/{mlflow.active_run().info.run_id}/model"
-    model_name = f"flight_model_week_{curr_week}"
+def post_new_model(server_url, curr_week, model):
+    """
+    Serialize model and send to FastAPI server for registration and promotion
+    """
+    # Serialize model to bytes
+    buffer = io.BytesIO()
+    joblib.dump(model, buffer)
+    buffer.seek(0)
+    model_bytes = buffer.read()
 
-    result = mlflow.register_model(model_uri, model_name)
+    # Encode to base64 for JSON transport
+    model_b64 = base64.b64encode(model_bytes).decode('utf-8')
 
+    # Send to server
     response = requests.post(
-        f"{MLFLOW_SERVER}/models/register",
+        f"{server_url}/model/upload",
         json={
             "week": curr_week,
-            "model_name": model_name,
-            "model_version": result.version
-        }
+            "model_data": model_b64
+        },
+        timeout=60
     )
-    return response
+
+    response.raise_for_status()
+    return response.json()

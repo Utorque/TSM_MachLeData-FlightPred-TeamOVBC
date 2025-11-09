@@ -24,9 +24,8 @@ with mlflow.start_run(run_name=f'week_{CURR_WEEK}') as parent_run:
     # Train if necessary
     if retrain_trigger:
         print('Drift detected retrain model')
-        # TODO adapt following part
-        model = train_model(train_data,CURR_WEEK)
-        # evaluate_model(model)
-        post_new_model('http://localhost:8000', curr_week=CURR_WEEK)
+        model = train_model(train_data, CURR_WEEK)
+        # Send model to server for registration and promotion
+        post_new_model('http://localhost:8000', curr_week=CURR_WEEK, model=model)
     else:
         print('No significant drift - do not retrain model')

@@ -8,6 +8,9 @@ from typing import Optional, Dict
 import os
 import sys
 from contextlib import asynccontextmanager
+import joblib
+import io
+import base64
 
 # Add utils to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../utils'))
@@ -145,6 +148,19 @@ class PromoteResponse(BaseModel):
     message: str
     promoted_model: Optional[str] = None
 
+class ModelUpload(BaseModel):
+    """Model upload request"""
+    week: int = Field(..., description="Training week number")
+    model_data: str = Field(..., description="Base64 encoded model data")
+
+class ModelUploadResponse(BaseModel):
+    """Model upload response"""
+    success: bool
+    message: str
+    model_name: str
+    version: Optional[str] = None
+    promoted: bool
+
 @app.get("/health")
 def health_check():
     """Health check endpoint"""
@@ -249,6 +265,95 @@ def promote_model(week: int):
             message=f"Promotion failed: {str(e)}",
             promoted_model=None
         )
+
+@app.post("/model/upload", response_model=ModelUploadResponse)
+def upload_model(data: ModelUpload):
+    """
+    Receive a trained model, register it to MLflow, and run promotion logic.
+    If this is the first model or no production model exists, it's automatically promoted.
+    """
+    try:
+        # Deserialize model from base64
+        model_bytes = base64.b64decode(data.model_data)
+        buffer = io.BytesIO(model_bytes)
+        model = joblib.load(buffer)
+
+        model_name = f"flight_model_week_{data.week}"
+
+        # Register model to MLflow
+        with mlflow.start_run(run_name=f"register_week_{data.week}"):
+            mlflow.sklearn.log_model(
+                sk_model=model,
+                artifact_path="model",
+                registered_model_name=model_name
+            )
+            mlflow.log_param("week", data.week)
+
+        # Get the latest version
+        client = MlflowClient()
+        versions = client.search_model_versions(f"name='{model_name}'")
+        latest_version = max([int(v.version) for v in versions])
+
+        # Check if there are any production models
+        registered_models = client.search_registered_models()
+        has_production_model = False
+
+        for rm in registered_models:
+            if "flight_model_week_" in rm.name:
+                model_versions = client.search_model_versions(f"name='{rm.name}'")
+                for v in model_versions:
+                    if v.current_stage == "Production":
+                        has_production_model = True
+                        break
+                if has_production_model:
+                    break
+
+        promoted = False
+
+        # If no production model exists, promote this one automatically
+        if not has_production_model:
+            client.transition_model_version_stage(
+                name=model_name,
+                version=str(latest_version),
+                stage="Production"
+            )
+            promoted = True
+            message = f"Model registered and promoted to Production (first model)"
+        else:
+            # Run promotion logic
+            try:
+                test_and_promote(data.week)
+                # Check if it was promoted
+                updated_versions = client.search_model_versions(f"name='{model_name}'")
+                for v in updated_versions:
+                    if v.version == str(latest_version) and v.current_stage == "Production":
+                        promoted = True
+                        break
+
+                if promoted:
+                    message = f"Model registered and promoted to Production (passed criteria)"
+                else:
+                    message = f"Model registered but not promoted (criteria not met)"
+
+            except Exception as e:
+                message = f"Model registered, promotion test failed: {str(e)}"
+
+        # Reload production model in cache
+        try:
+            load_production_model()
+        except:
+            pass
+
+        return ModelUploadResponse(
+            success=True,
+            message=message,
+            model_name=model_name,
+            version=str(latest_version),
+            promoted=promoted
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Model upload failed: {str(e)}")
 
 @app.get("/models/list")
 def list_models():
