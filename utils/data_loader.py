@@ -21,10 +21,10 @@ def parse_duration(duration_str):
     minutes = int(match.group(2)) if match.group(2) else 0
     return hours * 60 + minutes
 
-def load_data(upto_week: int, data_drift=False, concept_drift=False):
+def load_data(upto_week: int, data_drift=False, concept_drift=False, path='data/Flights.csv'):
     '''Load data and simulate drift if necessary'''
 
-    df = pd.read_csv('data/Flights.csv')
+    df = pd.read_csv(path)
 
     df["price"] = df["price"].apply(parse_convert_price)
     df['time_taken_minutes'] = df['time_taken'].apply(parse_duration).astype(float)

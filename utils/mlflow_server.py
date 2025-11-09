@@ -1,10 +1,11 @@
-from .data_loader import load_data
+from data_loader import load_data
 import mlflow
 import mlflow.sklearn
 from sklearn.metrics import mean_squared_error, r2_score
 
-def test_and_promote(curr_week):
-    test_data = load_data(curr_week + 1)
+def test_and_promote(curr_week, data_path='data/Flights.csv'):
+    # check cwd to find path
+    test_data = load_data(curr_week + 1, path=data_path)
 
     model_name = f"flight_model_week_{curr_week}"
     baseline_model_name = f"flight_model_week_6"
