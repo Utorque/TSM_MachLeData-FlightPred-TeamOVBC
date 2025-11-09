@@ -1,6 +1,7 @@
 from utils.mlflow_client import log_model_train_info, post_new_model
 from utils.mlflow_drift import check_and_log_drift
 from utils.data_loader import load_data
+from models.baseModel import train_model
 import mlflow
 
 DATA_DRIFT = False
@@ -24,7 +25,7 @@ with mlflow.start_run(run_name=f'week_{CURR_WEEK}') as parent_run:
     if retrain_trigger:
         print('Drift detected retrain model')
         # TODO adapt following part
-        # model = train_model(train_data)
+        model = train_model(train_data,CURR_WEEK)
         # evaluate_model(model)
         # post_new_model('http://mlflow-server:5000', curr_week=CURR_WEEK)
     else:
