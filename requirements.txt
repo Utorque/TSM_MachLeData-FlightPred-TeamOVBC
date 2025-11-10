@@ -6,3 +6,5 @@ seaborn
 evidently
 mlflow
 xgboost
+fastapi
+uvicorn
