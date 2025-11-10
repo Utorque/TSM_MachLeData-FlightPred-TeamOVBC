@@ -182,22 +182,29 @@ def predict_price(data: FlightData):
             raise HTTPException(status_code=503, detail=f"Model not available: {str(e)}")
 
     try:
-        # Prepare dataframe with exact column names expected by model
+        # Prepare dataframe with exact column names and types expected by model
         input_dict = {
-            "airline": [data.airline],
-            "ch_code": [data.ch_code],
-            "num_code": [data.num_code],
-            "from": [data.from_location],
-            "to": [data.to_location],
-            "Class": [data.Class],
-            "dayofweek": [data.dayofweek],
-            "dep_hour": [data.dep_hour],
-            "arr_hour": [data.arr_hour],
-            "duration_min": [data.duration_min],
-            "stops_n": [data.stops_n]
+            "airline": [str(data.airline)],
+            "ch_code": [str(data.ch_code)],
+            "num_code": [int(data.num_code)],
+            "from": [str(data.from_location)],
+            "to": [str(data.to_location)],
+            "Class": [str(data.Class)],
+            "dayofweek": [int(data.dayofweek)],
+            "dep_hour": [int(data.dep_hour)],
+            "arr_hour": [int(data.arr_hour)],
+            "duration_min": [float(data.duration_min)],
+            "stops_n": [int(data.stops_n)]
         }
 
         df = pd.DataFrame(input_dict)
+        
+        print("\n=== DEBUG INFO ===")
+        print(f"DataFrame shape: {df.shape}")
+        print(f"DataFrame dtypes:\n{df.dtypes}")
+        print(f"DataFrame content:\n{df}")
+        print(f"Model type: {type(model_cache['model'])}")
+        print("==================\n")
 
         # Predict
         prediction = model_cache["model"].predict(df)[0]
@@ -210,6 +217,10 @@ def predict_price(data: FlightData):
         )
 
     except Exception as e:
+        import traceback
+        print("\n=== FULL TRACEBACK ===")
+        traceback.print_exc()
+        print("======================\n")
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
 
 @app.get("/model/current", response_model=ModelInfo)
@@ -387,4 +398,4 @@ def list_models():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="debug")
