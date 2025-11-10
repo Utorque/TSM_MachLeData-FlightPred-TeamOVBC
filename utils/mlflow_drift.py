@@ -83,8 +83,8 @@ def check_and_log_drift(train_df, current_week):
         html_path = f'report/data_drift_week_{current_week-1}_vs_{current_week}.html'
         mlflow.log_artifact(html_path)
 
-        kde_graph_dir = f'report/distributions_week_{current_week-1}_vs_{current_week}/'
-        png_files = glob(os.path.join(kde_graph_dir, '**', '*.png'), recursive=True)
+        distribution_graph_dir = f'report/distributions_week_{current_week-1}_vs_{current_week}/'
+        png_files = glob(os.path.join(distribution_graph_dir, '**', '*.png'), recursive=True)
         for png_file in png_files:
             mlflow.log_artifact(png_file)
 

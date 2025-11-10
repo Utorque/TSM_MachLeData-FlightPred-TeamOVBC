@@ -33,7 +33,7 @@ def calculate_psi(expected, actual, bins=10):
 
 def visualize_distributions(reference_df, current_df, ref_w, cur_w, 
                             numerical_features=['price', 'num_code'], 
-                            categorical_features=[],
+                            categorical_features=['airline', 'ch_code', 'from', 'to', 'Class', 'dayofweek'],
                             path='report'):
     
     save_dir = f'{path}/distributions_week_{ref_w}_vs_{cur_w}/'
@@ -50,7 +50,7 @@ def visualize_distributions(reference_df, current_df, ref_w, cur_w,
         plt.savefig(f'{save_dir}{col}_kde.png')
         plt.close()
 
-     # --- Categorical : Barplots ---
+    # --- Categorical : Barplots ---
     for col in categorical_features:
         plt.figure(figsize=(6,4))
         ref_counts = reference_df[col].value_counts(normalize=True)
@@ -194,6 +194,7 @@ def drift_evolution_figure(combined_results, path):
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(f'{path}/drift_evolution_rolling_vs_expanding.png')
+    plt.close()
 
 def drift_heatmap(combined_results, path):
     for approach in combined_results['approach'].unique():

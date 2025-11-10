@@ -35,7 +35,7 @@ def load_data(upto_week: int, data_drift=False, concept_drift=False, path='data/
     if data_drift:
         mask = df['week'] == upto_week
         df.loc[mask, 'price'] *= 1.5
-        df.loc[mask, 'time_taken_minutes'] *= 1.33
+        df.loc[mask, 'time_taken_minutes'] *= 1.5
         df.loc[mask, 'airline'] = np.where(
             np.random.rand(mask.sum()) < 0.7,
             'Emirates',
