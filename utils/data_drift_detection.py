@@ -100,7 +100,7 @@ def visualize_distributions(reference_df, current_df, ref_w, cur_w,
         plt.figure(figsize=(6,4))
         ref_counts = reference_df[col].value_counts(normalize=True)
         cur_counts = current_df[col].value_counts(normalize=True)
-        compare_df = pd.DataFrame({'Reference': ref_counts, 'Current': cur_counts}).fillna(0)
+        compare_df = pd.DataFrame({f'Week {ref_w}': ref_counts, f'Week {cur_w}': cur_counts}).fillna(0)
         compare_df.plot(kind='bar', alpha=0.7)
         plt.title(f'Distribution of {col} (Week {ref_w} vs {cur_w})')
         plt.ylabel('Proportion')

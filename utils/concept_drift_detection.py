@@ -69,8 +69,7 @@ def compute_concept_drift(data, report_path, target="price"):
 
         results.append({
             "week_pair": f"{w_prev}-{w_curr}",
-            "mean_corr_diff": mean_diff,
-            "concept_drift_detected": mean_diff > 0.15
+            "mean_corr_diff": mean_diff
         })
 
     plot_concept_drift(corr_by_week, report_path)
