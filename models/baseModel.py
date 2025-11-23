@@ -74,9 +74,7 @@ def train_model(df, nbweek, model_out=None):
         raise ValueError(f"Pas assez de semaines dans les données (besoin: {nbweek+1}).")
 
     train_weeks = weeks_sorted[:nbweek-6]
-    print(train_weeks)
     test_week = weeks_sorted[nbweek-6]
-    print(test_week)
 
     df_train = df[df["week"].isin(train_weeks)].copy()
     df_test = df[df["week"] == test_week].copy()
@@ -91,11 +89,23 @@ def train_model(df, nbweek, model_out=None):
     X_train, y_train = df_train[feature_cols], df_train[target]
     X_test, y_test   = df_test[feature_cols], df_test[target]
 
-    cat_cols = X_train.select_dtypes(include="object").columns.tolist()
-    num_cols = X_train.select_dtypes(include=["int64","float64"]).columns.tolist()
+    # CRITICAL: Explicitly define categorical and numerical columns
+    # Don't rely on select_dtypes which can be unreliable
+    cat_cols = ["airline", "ch_code", "from", "to", "Class"]
+    num_cols = ["dayofweek", "num_code", "dep_hour", "arr_hour", "duration_min", "stops_n"]
+
+    # CRITICAL: Clean categorical columns - convert to string and handle NaN
+    for col in cat_cols:
+        X_train[col] = X_train[col].fillna("MISSING").astype(str)
+        X_test[col] = X_test[col].fillna("MISSING").astype(str)
+
+    # Ensure numerical columns are proper numeric types
+    for col in num_cols:
+        X_train[col] = pd.to_numeric(X_train[col], errors='coerce').fillna(0)
+        X_test[col] = pd.to_numeric(X_test[col], errors='coerce').fillna(0)
 
     preproc = ColumnTransformer([
-        ("cat", OneHotEncoder(handle_unknown="ignore"), cat_cols),
+        ("cat", OneHotEncoder(handle_unknown="ignore", dtype=np.float64), cat_cols),
         ("num", "passthrough", num_cols),
     ])
 
@@ -130,7 +140,6 @@ def train_model(df, nbweek, model_out=None):
     if model_out:
         Path(model_out).parent.mkdir(parents=True, exist_ok=True)
         joblib.dump(model, model_out)
-    
     
     print(f"\nSemaines d'entraînement : {train_weeks}")
     print(f"Semaine de test         : {test_week}")

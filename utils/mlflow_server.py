@@ -1,7 +1,11 @@
 from data_loader import load_data
 import mlflow
 import mlflow.sklearn
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+from math import sqrt
+import pandas as pd
+import numpy as np
+import re
 
 def test_and_promote(curr_week, data_path='data/Flights.csv'):
     test_data, _ = load_data(curr_week + 1, path=data_path)

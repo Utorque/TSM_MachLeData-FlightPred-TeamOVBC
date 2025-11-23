@@ -76,7 +76,9 @@ def detect_data_drift(reference_df, current_df):
     return pd.DataFrame(results)
 
 def visualize_distributions(reference_df, current_df, ref_w, cur_w, 
-                            numerical_features=['price', 'num_code', 'time_taken_minutes'], path='report'):
+                            numerical_features=['price', 'num_code', 'time_taken_minutes'],
+                            categorical_features=['airline', 'ch_code', 'from', 'to', 'Class', 'dayofweek'], 
+                            path='report'):
     '''Print KDE (Kernel Density Estimation) graphs (for numerical value only)'''
     
     save_dir = f'{path}/distributions_week_{ref_w}_vs_{cur_w}/'
@@ -91,6 +93,19 @@ def visualize_distributions(reference_df, current_df, ref_w, cur_w,
         plt.legend()
         plt.tight_layout()
         plt.savefig(f'{save_dir}{col}_kde.png')
+        plt.close()
+
+    # --- Categorical : Barplots ---
+    for col in categorical_features:
+        plt.figure(figsize=(6,4))
+        ref_counts = reference_df[col].value_counts(normalize=True)
+        cur_counts = current_df[col].value_counts(normalize=True)
+        compare_df = pd.DataFrame({f'Week {ref_w}': ref_counts, f'Week {cur_w}': cur_counts}).fillna(0)
+        compare_df.plot(kind='bar', alpha=0.7)
+        plt.title(f'Distribution of {col} (Week {ref_w} vs {cur_w})')
+        plt.ylabel('Proportion')
+        plt.tight_layout()
+        plt.savefig(f'{save_dir}{col}_bar.png')
         plt.close()
 
 def rolling_drift(data, report_path, current_week=None):
