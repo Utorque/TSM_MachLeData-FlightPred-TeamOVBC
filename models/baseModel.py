@@ -15,34 +15,6 @@ from xgboost import XGBRegressor
 from math import sqrt
 
 
-# ---------- HELPER FUNCTIONS ----------
-def parse_price(x):
-    return float(str(x).replace(",", "").strip())
-
-def hhmm_to_hour(series):
-    t = pd.to_datetime(series, format="%H:%M", errors="coerce")
-    return t.dt.hour
-
-def parse_duration_minutes(x):
-    if pd.isna(x):
-        return np.nan
-    s = str(x).lower().replace(" ", "")
-    m = re.match(r"(?:(\d+)h)?(?:(\d+)m)?", s)
-    if not m:
-        return np.nan
-    h = int(m.group(1) or 0)
-    m_ = int(m.group(2) or 0)
-    return h * 60 + m_
-
-def parse_stops(x):
-    if pd.isna(x):
-        return np.nan
-    s = str(x).strip().lower()
-    if "non" in s:
-        return 0
-    m = re.search(r"(\d+)", s)
-    return int(m.group(1)) if m else np.nan
-
 
 # ---------- CORE TRAINING FUNCTION ----------
 def train_model(df, nbweek, model_out=None):
@@ -62,11 +34,7 @@ def train_model(df, nbweek, model_out=None):
         raise ValueError(f"Colonnes manquantes dans le dataframe: {missing}")
 
     # Convert / enrich
-    df["price"] = df["price"].apply(parse_price)
-    df["dep_hour"] = hhmm_to_hour(df["dep_time"])
-    df["arr_hour"] = hhmm_to_hour(df["arr_time"])
-    df["time_taken_minutes"] = df["time_taken"].apply(parse_duration_minutes)
-    df["stops_n"] = df["stop"].apply(parse_stops)
+    # /!\ MOVED TO DATA LOADER /!\
 
     # Split weeks
     weeks_sorted = sorted(df["week"].dropna().astype(int).unique())
@@ -92,7 +60,7 @@ def train_model(df, nbweek, model_out=None):
     # CRITICAL: Explicitly define categorical and numerical columns
     # Don't rely on select_dtypes which can be unreliable
     cat_cols = ["airline", "ch_code", "from", "to", "Class"]
-    num_cols = ["dayofweek", "num_code", "dep_hour", "arr_hour", "duration_min", "stops_n"]
+    num_cols = ["dayofweek", "num_code", "dep_hour", "arr_hour", "time_taken_minutes", "stops_n"]
 
     # CRITICAL: Clean categorical columns - convert to string and handle NaN
     for col in cat_cols:
@@ -158,7 +126,9 @@ def main():
     parser.add_argument("--model-out", type=str, default=None)
     args = parser.parse_args()
 
-    df = pd.read_csv(args.csv, parse_dates=["date"])
+    #TODO USE DATALOADER !!! sinon impossible de s'y retrouver et de tout refaire partout
+    # df = pd.read_csv(args.csv, parse_dates=["date"])
+    
     model, metrics, train_weeks, test_week = train_model(
         df, args.nbweek, model_out=args.model_out
     )

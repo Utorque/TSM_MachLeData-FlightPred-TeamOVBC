@@ -1,7 +1,7 @@
 from data_loader import load_data
 import mlflow
 import mlflow.sklearn
-from sklearn.metrics import mean_squared_error, mean_absolute_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from math import sqrt
 import pandas as pd
 import numpy as np
@@ -20,9 +20,20 @@ def test_and_promote(curr_week, data_path='data/Flights.csv'):
     production_models = [v for v in client.search_model_versions("") if v.current_stage == "Production"]
     current_production = max(production_models, key=lambda v: int(v.version)) if production_models else None
     
-    # Prepare test data
-    X_test = test_data.drop(columns=['price'])
+    # CRITICAL FIX: Prepare test data with exact columns and types
+    feature_cols = [
+        "airline", "ch_code", "from", "to", "Class", "dayofweek",
+        "num_code", "dep_hour", "arr_hour", "time_taken_minutes", "stops_n"
+    ]
+    
+    cat_cols = ["airline", "ch_code", "from", "to", "Class"]
+    
+    X_test = test_data[feature_cols].copy()
     y_test = test_data['price']
+    
+    # Convert categorical to string and handle NaN
+    for col in cat_cols:
+        X_test[col] = X_test[col].fillna("MISSING").astype(str)
     
     # Evaluate contender
     y_pred_contender = contender_model.predict(X_test)

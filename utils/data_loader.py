@@ -21,6 +21,45 @@ def parse_duration(duration_str):
     minutes = int(match.group(2)) if match.group(2) else 0
     return hours * 60 + minutes
 
+# ---------- HELPER FUNCTIONS ----------
+def parse_price(x):
+    return float(str(x).replace(",", "").strip())
+
+def hhmm_to_hour(series):
+    t = pd.to_datetime(series, format="%H:%M", errors="coerce")
+    return t.dt.hour
+
+def parse_duration_minutes(x):
+    if pd.isna(x):
+        return np.nan
+    s = str(x).lower().replace(" ", "")
+    m = re.match(r"(?:(\d+)h)?(?:(\d+)m)?", s)
+    if not m:
+        return np.nan
+    h = int(m.group(1) or 0)
+    m_ = int(m.group(2) or 0)
+    return h * 60 + m_
+
+def parse_stops(x):
+    if pd.isna(x):
+        return np.nan
+    s = str(x).strip().lower()
+    if "non" in s:
+        return 0
+    m = re.search(r"(\d+)", s)
+    return int(m.group(1)) if m else np.nan
+
+def day_of_week_to_int(x):
+    match x:
+        case "Monday": return 0
+        case "Tuesday": return 1
+        case "Wednesday": return 2
+        case "Thursday": return 3
+        case "Friday": return 4
+        case "Saturday": return 5
+        case "Sunday": return 6
+        case _: return np.nan
+
 def load_data(upto_week: int, data_drift=False, concept_drift=False, path='data/Flights.csv'):
     '''Load data and simulate drift if necessary'''
 
@@ -28,8 +67,10 @@ def load_data(upto_week: int, data_drift=False, concept_drift=False, path='data/
 
     df["price"] = df["price"].apply(parse_convert_price)
     df['time_taken_minutes'] = df['time_taken'].apply(parse_duration).astype(float)
-    
+    df["dep_hour"] = hhmm_to_hour(df["dep_time"])
+    df["arr_hour"] = hhmm_to_hour(df["arr_time"])
     df["stops_n"] = df["stop"].str[0].replace("n", "0").astype(int)
+    df["dayofweek"] = df["dayofweek"].apply(day_of_week_to_int)
 
     df = df[df['week'] <= upto_week].copy()
 

@@ -273,7 +273,7 @@ def promote_model(week: int):
     except Exception as e:
         return PromoteResponse(
             success=False,
-            message=f"Promotion failed: {str(e)}",
+            message=f"Promotion failed: {str(e)}, detail: {str(e.with_traceback())}",
             promoted_model=None
         )
 
@@ -347,7 +347,9 @@ def upload_model(data: ModelUpload):
                     message = f"Model registered but not promoted (criteria not met)"
 
             except Exception as e:
-                message = f"Model registered, promotion test failed: {str(e)}"
+                import traceback
+                message = f"Model registered, promotion test failed: {traceback.format_exc()}"
+
 
         # Reload production model in cache
         try:
