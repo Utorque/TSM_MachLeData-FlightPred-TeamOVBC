@@ -22,7 +22,7 @@ def test_predict():
         "dayofweek": 4,  # Friday (0=Monday)
         "dep_hour": 18,
         "arr_hour": 20,
-        "duration_min": 120,  # 2h 00m
+        "time_taken_minutes": 120,  # 2h 00m
         "stops_n": 0
     }
     
@@ -43,7 +43,7 @@ def test_predict_economy():
         "dayofweek": 4,
         "dep_hour": 19,
         "arr_hour": 22,
-        "duration_min": 130,
+        "time_taken_minutes": 130,
         "stops_n": 0
     }
     
@@ -64,7 +64,7 @@ def test_predict_with_stop():
         "dayofweek": 4,
         "dep_hour": 20,
         "arr_hour": 20,
-        "duration_min": 1485,  # 24h 45m
+        "time_taken_minutes": 1485,  # 24h 45m
         "stops_n": 1
     }
     
@@ -106,7 +106,7 @@ def test_invalid_predict():
         "dayofweek": 10,  # Invalid: should be 0-6
         "dep_hour": 18,
         "arr_hour": 20,
-        "duration_min": 120,
+        "time_taken_minutes": 120,
         "stops_n": 0
     }
     

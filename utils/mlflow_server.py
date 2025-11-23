@@ -4,52 +4,64 @@ import mlflow.sklearn
 from sklearn.metrics import mean_squared_error, r2_score
 
 def test_and_promote(curr_week, data_path='data/Flights.csv'):
-    # check cwd to find path
-    test_data = load_data(curr_week + 1, path=data_path)
-
-    model_name = f"flight_model_week_{curr_week}"
-    baseline_model_name = f"flight_model_week_6"
-
-    # Load current model
-    current_model = mlflow.sklearn.load_model(f"models:/{model_name}/latest")
-
-    # Load baseline model (week 6)
-    if curr_week > 6:
-        baseline_model = mlflow.sklearn.load_model(f"models:/{baseline_model_name}/latest")
-    else:
-        baseline_model = None
-
+    test_data, _ = load_data(curr_week + 1, path=data_path)
+    
+    contender_model_name = f"flight_model_week_{curr_week}"
+    
+    # Load contender model
+    contender_model = mlflow.sklearn.load_model(f"models:/{contender_model_name}/latest")
+    
+    # Get current production model (latest version in Production stage)
+    client = mlflow.tracking.MlflowClient()
+    production_models = [v for v in client.search_model_versions("") if v.current_stage == "Production"]
+    current_production = max(production_models, key=lambda v: int(v.version)) if production_models else None
+    
     # Prepare test data
     X_test = test_data.drop(columns=['price'])
     y_test = test_data['price']
-
-    # Evaluate current model
-    y_pred_current = current_model.predict(X_test)
-    mse_current = mean_squared_error(y_test, y_pred_current)
-    r2_current = r2_score(y_test, y_pred_current)
-
+    
+    # Evaluate contender
+    y_pred_contender = contender_model.predict(X_test)
+    mse_contender = mean_squared_error(y_test, y_pred_contender)
+    r2_contender = r2_score(y_test, y_pred_contender)
+    
     with mlflow.start_run(run_name=f"test_week_{curr_week + 1}"):
         mlflow.log_metric("test_week", curr_week + 1)
-        mlflow.log_metric("mse_current", mse_current)
-        mlflow.log_metric("r2_current", r2_current)
-
-        # Compare with baseline if available
-        if baseline_model is not None:
-            y_pred_baseline = baseline_model.predict(X_test)
-            mse_baseline = mean_squared_error(y_test, y_pred_baseline)
-            r2_baseline = r2_score(y_test, y_pred_baseline)
-
-            mlflow.log_metric("mse_baseline", mse_baseline)
-            mlflow.log_metric("r2_baseline", r2_baseline)
-            mlflow.log_metric("drift_score", abs(mse_current - mse_baseline))
-
-        # Promote if metrics are acceptable
-        if r2_current > 0.7:
-            client = mlflow.tracking.MlflowClient()
+        mlflow.log_metric("mse_contender", mse_contender)
+        mlflow.log_metric("r2_contender", r2_contender)
+        
+        should_promote = False
+        
+        if current_production is None:
+            should_promote = True
+            mlflow.log_param("promotion_reason", "no_production_model")
+        else:
+            production_model = mlflow.sklearn.load_model(
+                f"models:/{current_production.name}/{current_production.version}"
+            )
+            
+            y_pred_production = production_model.predict(X_test)
+            mse_production = mean_squared_error(y_test, y_pred_production)
+            r2_production = r2_score(y_test, y_pred_production)
+            
+            mlflow.log_metric("mse_production", mse_production)
+            mlflow.log_metric("r2_production", r2_production)
+            mlflow.log_param("production_model_name", current_production.name)
+            
+            should_promote = mse_contender < mse_production
+            mlflow.log_param("promotion_reason", "better_than_production" if should_promote else "worse_than_production")
+        
+        if should_promote:
+            versions = client.search_model_versions(f"name='{contender_model_name}'")
+            latest_version = max([int(v.version) for v in versions])
+            
             client.transition_model_version_stage(
-                name=model_name,
-                version="latest",
+                name=contender_model_name,
+                version=str(latest_version + 1),
                 stage="Production"
             )
-
+            mlflow.log_param("promoted", True)
+        else:
+            mlflow.log_param("promoted", False)
+    
     return test_data

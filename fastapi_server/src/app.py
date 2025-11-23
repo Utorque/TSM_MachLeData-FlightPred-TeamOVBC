@@ -122,7 +122,7 @@ class FlightData(BaseModel):
     dayofweek: int = Field(..., ge=0, le=6, description="Day of week (0=Monday, 6=Sunday)")
     dep_hour: int = Field(..., ge=0, le=23, description="Departure hour")
     arr_hour: int = Field(..., ge=0, le=23, description="Arrival hour")
-    duration_min: float = Field(..., gt=0, description="Flight duration in minutes")
+    time_taken_minutes: float = Field(..., gt=0, description="Flight duration in minutes")
     stops_n: int = Field(..., ge=0, description="Number of stops")
 
     class Config:
@@ -193,7 +193,7 @@ def predict_price(data: FlightData):
             "dayofweek": [data.dayofweek],
             "dep_hour": [data.dep_hour],
             "arr_hour": [data.arr_hour],
-            "duration_min": [data.duration_min],
+            "time_taken_minutes": [data.time_taken_minutes],
             "stops_n": [data.stops_n]
         }
 
@@ -284,7 +284,7 @@ def upload_model(data: ModelUpload):
         with mlflow.start_run(run_name=f"register_week_{data.week}"):
             mlflow.sklearn.log_model(
                 sk_model=model,
-                artifact_path="model",
+                name="model",
                 registered_model_name=model_name
             )
             mlflow.log_param("week", data.week)
