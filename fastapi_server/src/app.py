@@ -122,7 +122,7 @@ class FlightData(BaseModel):
     dayofweek: int = Field(..., ge=0, le=6, description="Day of week (0=Monday, 6=Sunday)")
     dep_hour: int = Field(..., ge=0, le=23, description="Departure hour")
     arr_hour: int = Field(..., ge=0, le=23, description="Arrival hour")
-    duration_min: float = Field(..., gt=0, description="Flight duration in minutes")
+    time_taken_minutes: float = Field(..., gt=0, description="Flight duration in minutes")
     stops_n: int = Field(..., ge=0, description="Number of stops")
 
     class Config:
@@ -184,17 +184,17 @@ def predict_price(data: FlightData):
     try:
         # Prepare dataframe with exact column names and types expected by model
         input_dict = {
-            "airline": [str(data.airline)],
-            "ch_code": [str(data.ch_code)],
-            "num_code": [int(data.num_code)],
-            "from": [str(data.from_location)],
-            "to": [str(data.to_location)],
-            "Class": [str(data.Class)],
-            "dayofweek": [int(data.dayofweek)],
-            "dep_hour": [int(data.dep_hour)],
-            "arr_hour": [int(data.arr_hour)],
-            "duration_min": [float(data.duration_min)],
-            "stops_n": [int(data.stops_n)]
+            "airline": [data.airline],
+            "ch_code": [data.ch_code],
+            "num_code": [data.num_code],
+            "from": [data.from_location],
+            "to": [data.to_location],
+            "Class": [data.Class],
+            "dayofweek": [data.dayofweek],
+            "dep_hour": [data.dep_hour],
+            "arr_hour": [data.arr_hour],
+            "time_taken_minutes": [data.time_taken_minutes],
+            "stops_n": [data.stops_n]
         }
 
         df = pd.DataFrame(input_dict)
@@ -295,7 +295,7 @@ def upload_model(data: ModelUpload):
         with mlflow.start_run(run_name=f"register_week_{data.week}"):
             mlflow.sklearn.log_model(
                 sk_model=model,
-                artifact_path="model",
+                name="model",
                 registered_model_name=model_name
             )
             mlflow.log_param("week", data.week)

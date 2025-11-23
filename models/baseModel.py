@@ -65,7 +65,7 @@ def train_model(df, nbweek, model_out=None):
     df["price"] = df["price"].apply(parse_price)
     df["dep_hour"] = hhmm_to_hour(df["dep_time"])
     df["arr_hour"] = hhmm_to_hour(df["arr_time"])
-    df["duration_min"] = df["time_taken"].apply(parse_duration_minutes)
+    df["time_taken_minutes"] = df["time_taken"].apply(parse_duration_minutes)
     df["stops_n"] = df["stop"].apply(parse_stops)
 
     # Split weeks
@@ -83,7 +83,7 @@ def train_model(df, nbweek, model_out=None):
     target = "price"
     feature_cols = [
         "airline","ch_code","from","to","Class","dayofweek",
-        "num_code","dep_hour","arr_hour","duration_min","stops_n"
+        "num_code","dep_hour","arr_hour","time_taken_minutes","stops_n"
     ]
 
     X_train, y_train = df_train[feature_cols], df_train[target]

@@ -28,6 +28,8 @@ def load_data(upto_week: int, data_drift=False, concept_drift=False, path='data/
 
     df["price"] = df["price"].apply(parse_convert_price)
     df['time_taken_minutes'] = df['time_taken'].apply(parse_duration).astype(float)
+    
+    df["stops_n"] = df["stop"].str[0].replace("n", "0").astype(int)
 
     df = df[df['week'] <= upto_week].copy()
 
