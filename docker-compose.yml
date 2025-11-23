@@ -1,0 +1,12 @@
+services:
+  fastapi:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data:ro
+      - ./mlruns:/app/mlruns
+    environment:
+      - DATA_PATH=/app/data/Flights.csv

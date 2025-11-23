@@ -12,13 +12,12 @@ import joblib
 import io
 import base64
 
-# Add utils to path
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../utils'))
-sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+DATA_PATH = os.getenv("DATA_PATH", "/app/data/Flights.csv")
 
-DATA_PATH = r"../../data/Flights.csv"
-
-from mlflow_server import test_and_promote
+# At the top of the file, proper imports
+import sys
+sys.path.insert(0, '/app')
+from utils.mlflow_server import test_and_promote
 
 # Global model cache
 model_cache = {"model": None, "model_name": None, "version": None}
