@@ -12,9 +12,10 @@ COPY . /app/
 # Set Python path
 ENV PYTHONPATH=/app
 ENV DATA_PATH=/app/data/Flights.csv
+ENV MLFLOW_TRACKING_URI=sqlite:///mlruns.db
 
 # Expose port
 EXPOSE 8000
 
 # Run the app
-CMD ["uvicorn", "fastapi_server.src.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "fastapi_server.src.app:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "debug"]

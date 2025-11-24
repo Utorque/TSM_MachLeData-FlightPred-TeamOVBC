@@ -36,7 +36,7 @@ with mlflow.start_run(run_name=f'week_{CURR_WEEK}') as parent_run:
         
         # Post ONLY the model (not the tuple)
         result = post_new_model(
-            server_url="http://localhost:8000",
+            server_url="http://localhost:52001",
             curr_week=CURR_WEEK,
             model=model  # Pass only the model, not the tuple
         )
