@@ -12,7 +12,7 @@ import joblib
 import io
 import base64
 
-DATA_PATH = r"../../data/Flights.csv" #os.getenv("DATA_PATH", r"../../data/Flights.csv")
+DATA_PATH = os.getenv("DATA_PATH", r"../../data/Flights.csv")
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../utils'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
