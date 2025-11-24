@@ -3,3 +3,5 @@ services:
     image: ghcr.io/utorque/machledata-flightpred-ovbc-server:latest
     ports:
       - "52001:8000"
+    environment:
+      - DATA_PATH=/app/data/Flights.csv
