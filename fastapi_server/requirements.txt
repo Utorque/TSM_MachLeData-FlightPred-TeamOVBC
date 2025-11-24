@@ -4,3 +4,14 @@ pandas
 scikit-learn
 joblib
 pydantic
+mlflow
+pandas
+numpy
+scipy
+matplotlib
+seaborn
+evidently
+mlflow
+xgboost
+fastapi
+uvicorn
