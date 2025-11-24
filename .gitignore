@@ -3,4 +3,5 @@ data/
 report/
 .DS_Store
 mlruns/
+mlruns2/
 **/__pycache__/

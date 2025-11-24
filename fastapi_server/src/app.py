@@ -12,7 +12,10 @@ import joblib
 import io
 import base64
 
-DATA_PATH = os.getenv("DATA_PATH", "/app/data/Flights.csv")
+DATA_PATH = os.getenv("DATA_PATH", r"../../data/Flights.csv")
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../utils'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
 # At the top of the file, proper imports
 import sys
@@ -272,7 +275,7 @@ def promote_model(week: int):
     except Exception as e:
         return PromoteResponse(
             success=False,
-            message=f"Promotion failed: {str(e)}, detail: {str(e.with_traceback())}",
+            message=f"Promotion failed: {str(e)}",
             promoted_model=None
         )
 
@@ -346,8 +349,7 @@ def upload_model(data: ModelUpload):
                     message = f"Model registered but not promoted (criteria not met)"
 
             except Exception as e:
-                import traceback
-                message = f"Model registered, promotion test failed: {traceback.format_exc()}"
+                message = f"Model registered, promotion test failed: {e}"
 
 
         # Reload production model in cache
