@@ -8,24 +8,19 @@ import requests
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from scipy.stats import ks_2samp, wasserstein_distance
 
-API_URL = "http://127.0.0.1:52001/predict"
+def predict_fastapi(df, API_URL):
 
-def predict_fastapi(df):
-    """Send features to FastAPI model server for prediction."""
     payload = df.to_dict(orient="records")
-    resp = requests.post(API_URL, json={"data": payload})
+    resp = requests.post(f"{API_URL}/predict", json={"data": payload})
     resp.raise_for_status()
     return pd.Series(resp.json()["predictions"])
 
-def check_and_log_model_drift(df, current_week):
+def check_and_log_model_drift(df, current_week, API_URL):
 
     prev_week = current_week - 1
     if prev_week not in df["week"].unique():
         print("No previous week available for model drift comparison.")
         return None
-    
-    # Load model
-    model = mlflow.sklearn.load_model("models:/flight_price_model/Production")
 
     # Extract data
     df_prev = df[df["week"] == prev_week]
@@ -40,8 +35,8 @@ def check_and_log_model_drift(df, current_week):
     X_curr = df_curr.drop(columns=[target_col, "week"], errors="ignore")
 
     # Prediction
-    y_pred_prev = model.predict(X_prev)
-    y_pred_curr = model.predict(X_curr)
+    y_pred_prev = predict_fastapi(X_prev, API_URL)
+    y_pred_curr = predict_fastapi(X_curr, API_URL)
 
     # Errors
     e_prev = y_prev - y_pred_prev

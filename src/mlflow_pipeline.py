@@ -9,6 +9,14 @@ DATA_DRIFT = False
 CONCEPT_DRIFT = False
 CURR_WEEK = 9
 
+# local / prod
+ENV_MODE = 'local'  
+
+if ENV_MODE == "local":
+    SERVER_URL = 'http://localhost:52001'
+else:
+    SERVER_URL = 'https://flightpred-api-376025128405.europe-west6.run.app'
+
 mlflow.set_experiment('Flight_Model_Training')
 
 with mlflow.start_run(run_name=f'week_{CURR_WEEK}') as parent_run:
@@ -37,7 +45,7 @@ with mlflow.start_run(run_name=f'week_{CURR_WEEK}') as parent_run:
         
         # Post ONLY the model (not the tuple)
         result = post_new_model(
-            server_url="http://localhost:52001",
+            server_url=SERVER_URL,
             curr_week=CURR_WEEK,
             model=model  # Pass only the model, not the tuple
         )
@@ -48,4 +56,4 @@ with mlflow.start_run(run_name=f'week_{CURR_WEEK}') as parent_run:
 
         # Log model drift here
         print('Check model drift')
-        check_and_log_model_drift(train_data, current_week=CURR_WEEK)
+        check_and_log_model_drift(train_data, current_week=CURR_WEEK, API_URL=SERVER_URL)
