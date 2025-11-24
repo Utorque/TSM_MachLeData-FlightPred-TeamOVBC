@@ -11,7 +11,6 @@ COPY . /app/
 
 # Set Python path
 ENV PYTHONPATH=/app
-ENV DATA_PATH=/app/data/Flights.csv
 ENV MLFLOW_TRACKING_URI=sqlite:///mlruns.db
 
 # Expose port
