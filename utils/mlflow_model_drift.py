@@ -8,7 +8,7 @@ import requests
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from scipy.stats import ks_2samp, wasserstein_distance
 
-API_URL = "http://127.0.0.1:8000/predict"
+API_URL = "http://127.0.0.1:52001/predict"
 
 def predict_fastapi(df):
     """Send features to FastAPI model server for prediction."""

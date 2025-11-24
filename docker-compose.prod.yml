@@ -1,0 +1,5 @@
+services:
+  fastapi:
+    image: ghcr.io/utorque/machledata-flightpred-ovbc-server:latest
+    ports:
+      - "52001:8000"

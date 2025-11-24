@@ -7,7 +7,7 @@ import mlflow
 
 DATA_DRIFT = False
 CONCEPT_DRIFT = False
-CURR_WEEK = 8
+CURR_WEEK = 9
 
 mlflow.set_experiment('Flight_Model_Training')
 
