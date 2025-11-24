@@ -36,7 +36,7 @@ def compute_drift_metrics(df, col="error"):
         })
     return pd.DataFrame(results)
 
-def plot_error_distributions(df, output_dir="report/concept_drift/"):
+def plot_error_distributions(df, output_dir="report/model_drift/"):
     os.makedirs(output_dir, exist_ok=True)
     weeks = sorted(df["week"].unique())
     for week in weeks:
@@ -48,7 +48,7 @@ def plot_error_distributions(df, output_dir="report/concept_drift/"):
     plt.savefig(os.path.join(output_dir, "error_distribution.png"))
     plt.close()
 
-def plot_drift_evolution(drift_df, output_dir="report/concept_drift/"):
+def plot_drift_evolution(drift_df, output_dir="report/model_drift/"):
     plt.figure(figsize=(6,4))
     plt.plot(drift_df["week_pair"], drift_df["wasserstein"], marker="o", label="Wasserstein")
     plt.axhline(0.1, color="red", linestyle="--", label="Drift threshold")
@@ -62,10 +62,10 @@ def plot_drift_evolution(drift_df, output_dir="report/concept_drift/"):
     plt.close()
 
 if __name__ == "__main__":
-    output_dir = "report/concept_drift/"
+    output_dir = "report/model_drift/"
     df = load_predictions()
     plot_error_distributions(df, output_dir=output_dir)
     drift_df = compute_drift_metrics(df)
-    drift_df.to_csv(os.path.join(output_dir, "concept_drift_results.csv"), index=False)
+    drift_df.to_csv(os.path.join(output_dir, "model_drift_results.csv"), index=False)
     plot_drift_evolution(drift_df, output_dir=output_dir)
     print("Concept drift analysis completed.")

@@ -1,11 +1,12 @@
 from utils.mlflow_client import log_model_train_info, post_new_model
 from utils.mlflow_drift import check_and_log_drift
+from utils.mlflow_model_drift import check_and_log_model_drift
 from utils.data_loader import load_data
 from models.baseModel import train_model
 import mlflow
 
 DATA_DRIFT = False
-CONCEPT_DRIFT = True
+CONCEPT_DRIFT = False
 CURR_WEEK = 8
 
 mlflow.set_experiment('Flight_Model_Training')
@@ -44,3 +45,7 @@ with mlflow.start_run(run_name=f'week_{CURR_WEEK}') as parent_run:
         print(f"Upload result: {result}")
     else:
         print('No significant drift - do not retrain model')
+
+        # Log model drift here
+        print('Check model drift')
+        check_and_log_model_drift(train_data, current_week=CURR_WEEK)

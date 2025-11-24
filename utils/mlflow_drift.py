@@ -70,7 +70,7 @@ def compute_weighted_data_drift_score(data_drift_results):
 
 
 def check_and_log_drift(train_df, current_week, GLOBAL_DRIFT_THRESHOLD = 0.10, DATA_DRIFT_THRESHOLD = 0.15, CONCEPT_DRIFT_THRESHOLD = 0.15):
-    '''Check and lo drift in mlflow'''
+    '''Check and log drift in mlflow'''
 
     with mlflow.start_run(run_name=f'drift_check_week_{current_week}', nested=True):
 
