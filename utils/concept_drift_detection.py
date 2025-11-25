@@ -39,6 +39,8 @@ def compute_concept_drift(data, report_path, target="price"):
     categorical_cols = data.select_dtypes(exclude=[np.number]).columns
     weeks = sorted(data["week"].unique())
 
+    categorical_cols = categorical_cols.drop("date")
+
     corr_summary = {}
 
     for week in weeks:

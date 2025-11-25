@@ -8,11 +8,12 @@ import mlflow
 DATA_DRIFT = False
 CONCEPT_DRIFT = False
 CURR_WEEK = 9
+LAST_TRAIN_WEEK = 7
 
 # local / prod
 ENV_MODE = 'local'  
 
-if ENV_MODE == "local":
+if ENV_MODE == 'local':
     SERVER_URL = 'http://localhost:52001'
 else:
     SERVER_URL = 'https://flightpred-api-376025128405.europe-west6.run.app'
@@ -25,11 +26,12 @@ with mlflow.start_run(run_name=f'week_{CURR_WEEK}') as parent_run:
     train_data, training_dict = load_data(upto_week=CURR_WEEK, data_drift=DATA_DRIFT, concept_drift=CONCEPT_DRIFT, path='data/Flights.csv')
 
     # Check drift
-    retrain_trigger = check_and_log_drift(train_data, current_week=CURR_WEEK)
+    retrain_trigger = check_and_log_drift(train_data, current_week=CURR_WEEK, last_train_week=LAST_TRAIN_WEEK)
 
     # Log training config
     log_model_train_info(training_dict, curr_week=CURR_WEEK)
 
+    
     # Train if necessary
     if retrain_trigger:
         print('Drift detected, retrain model')
@@ -57,3 +59,4 @@ with mlflow.start_run(run_name=f'week_{CURR_WEEK}') as parent_run:
         # Log model drift here
         print('Check model drift')
         check_and_log_model_drift(train_data, current_week=CURR_WEEK, API_URL=SERVER_URL)
+    

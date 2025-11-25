@@ -111,8 +111,6 @@ def visualize_distributions(reference_df, current_df, ref_w, cur_w,
 def rolling_drift(data, report_path, current_week=None):
     '''
     Apply rolling aproach to detect data drift.
-
-    Do not apply exapanding approach as it is not really appropriate (See exploration folder)
     '''
 
     # Prepare report path
@@ -137,6 +135,46 @@ def rolling_drift(data, report_path, current_week=None):
     my_eval = my_report.run(reference_data=reference_df, current_data=current_df)
     my_eval.save_html(f'{report_path}data_drift_week_{previous_week}_vs_{current_week}.html')
 
-    visualize_distributions(reference_df, current_df, previous_week, current_week, path=report_path)
+    visualize_distributions(
+        reference_df, 
+        current_df, 
+        previous_week, 
+        current_week, 
+        path=report_path
+    )
+
+    return drift_results
+
+def expanding_drift(data, report_path, last_train_week, current_week):
+    '''
+    Apply expanding window approach:
+    Compare all weeks from last_train_week ... current_week-1 to current_week
+    '''
+
+    os.makedirs(report_path, exist_ok=True)
+
+    # Build reference and current datasets
+    reference_df = data[(data['week'] >= last_train_week) & (data['week'] < current_week)]
+    current_df   = data[data['week'] == current_week]
+
+    # Detect drift manually
+    drift_results = detect_data_drift(reference_df, current_df)
+    drift_results['approach'] = 'expanding'
+    drift_results['ref_weeks'] = f'{last_train_week}-{current_week-1}'
+    drift_results['curr_week'] = current_week
+
+    # Evidently report
+    my_report = Report([DataDriftPreset()])
+    my_eval = my_report.run(reference_data=reference_df, current_data=current_df)
+    my_eval.save_html(f'{report_path}expanding_drift_{last_train_week}_to_{current_week-1}_vs_{current_week}.html')
+
+    # Plot distributions
+    visualize_distributions(
+        reference_df,
+        current_df,
+        ref_w=f'{last_train_week}_to_{current_week-1}',
+        cur_w=current_week,
+        path=report_path
+    )
 
     return drift_results
