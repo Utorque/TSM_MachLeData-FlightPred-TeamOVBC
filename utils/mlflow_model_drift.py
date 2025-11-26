@@ -1,30 +1,67 @@
+import os
 import mlflow
 import numpy as np
-import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import requests
+
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from scipy.stats import ks_2samp, wasserstein_distance
 
-def predict_fastapi(df, API_URL):
 
-    payload = df.to_dict(orient="records")
-    resp = requests.post(f"{API_URL}/predict", json={"data": payload})
-    resp.raise_for_status()
-    return pd.Series(resp.json()["predictions"])
+def predict_fastapi(df: pd.DataFrame, api_url: str, max_samples: int | None = 1000) -> pd.Series:
 
-def check_and_log_model_drift(df, current_week, API_URL):
+    if df.empty:
+        return pd.Series(dtype=float)
 
+    # Pour éviter d'envoyer 50k requêtes, on peut sous-échantillonner (si besoin)
+    if max_samples is not None and len(df) > max_samples:
+        df = df.sample(n=max_samples, random_state=42)
+
+    preds = []
+
+    for idx, row in df.iterrows():
+        payload = {
+            "airline": row["airline"],
+            "ch_code": row["ch_code"],
+            "num_code": int(row["num_code"]),
+            "from": row["from"],
+            "to": row["to"],
+            "Class": row["Class"],
+            "dayofweek": int(row["dayofweek"]),
+            "dep_hour": int(row["dep_hour"]),
+            "arr_hour": int(row["arr_hour"]),
+            "time_taken_minutes": int(row["time_taken_minutes"]),
+            "stops_n": int(row["stops_n"]),
+        }
+
+        resp = requests.post(f"{api_url}/predict", json=payload)
+        resp.raise_for_status()
+        data = resp.json()
+
+        if "predicted_price" not in data:
+            raise ValueError(f"Réponse inattendue de l'API: {data}")
+
+        preds.append((idx, float(data["predicted_price"])))
+
+    if not preds:
+        return pd.Series(dtype=float)
+
+    indices, values = zip(*preds)
+    return pd.Series(data=list(values), index=list(indices))
+
+
+def check_and_log_model_drift(df: pd.DataFrame, current_week: int, API_URL: str, max_samples: int | None = 1000):
+    
     prev_week = current_week - 1
     if prev_week not in df["week"].unique():
         print("No previous week available for model drift comparison.")
         return None
 
-    # Extract data
-    df_prev = df[df["week"] == prev_week]
-    df_curr = df[df["week"] == current_week]
+    # Séparation des données
+    df_prev = df[df["week"] == prev_week].copy()
+    df_curr = df[df["week"] == current_week].copy()
 
     target_col = "price"
 
@@ -34,47 +71,51 @@ def check_and_log_model_drift(df, current_week, API_URL):
     y_curr = df_curr[target_col].astype(float)
     X_curr = df_curr.drop(columns=[target_col, "week"], errors="ignore")
 
-    # Prediction
-    y_pred_prev = predict_fastapi(X_prev, API_URL)
-    y_pred_curr = predict_fastapi(X_curr, API_URL)
+    # Prédictions via l'API (éventuellement sous-échantillonnées)
+    y_pred_prev = predict_fastapi(X_prev, API_URL, max_samples=max_samples)
+    y_pred_curr = predict_fastapi(X_curr, API_URL, max_samples=max_samples)
 
-    # Errors
+    # On aligne y_true sur les index des prédictions
+    y_prev = y_prev.loc[y_pred_prev.index]
+    y_curr = y_curr.loc[y_pred_curr.index]
+
+    # Erreurs
     e_prev = y_prev - y_pred_prev
     e_curr = y_curr - y_pred_curr
-    
-    # KS and Wasserstein Distance
+
+    # Statistiques de drift sur les erreurs
     ks_stat, ks_p = ks_2samp(e_prev, e_curr)
     wd = wasserstein_distance(e_prev, e_curr) / (np.std(e_prev) + 1e-6)
 
+    # RMSE / MAE par semaine
+    rmse_prev = np.sqrt(mean_squared_error(y_prev, y_pred_prev))
+    rmse_curr = np.sqrt(mean_squared_error(y_curr, y_pred_curr))
+    mae_prev = mean_absolute_error(y_prev, y_pred_prev)
+    mae_curr = mean_absolute_error(y_curr, y_pred_curr)
+    drift_rmse = rmse_curr - rmse_prev
+
+    # Dossier de sortie pour le plot
     out_dir = f"report/model_drift/week_{prev_week}_vs_{current_week}"
     os.makedirs(out_dir, exist_ok=True)
-    
+
+    # Plot des distributions d'erreurs
     plt.figure(figsize=(7, 4))
     sns.kdeplot(e_prev, fill=True, alpha=0.4, label=f"Week {prev_week}")
     sns.kdeplot(e_curr, fill=True, alpha=0.4, label=f"Week {current_week}")
     plt.title(f"Error Distribution - Week {prev_week} vs {current_week}")
-    plt.xlabel("Prediction Error")
+    plt.xlabel("Prediction Error (y_true - y_pred)")
     plt.legend()
     drift_plot_path = f"{out_dir}/error_kde.png"
     plt.tight_layout()
     plt.savefig(drift_plot_path)
     plt.close()
 
-    # Metrics
-    rmse_prev = np.sqrt(mean_squared_error(y_prev, y_pred_prev))
-    rmse_curr = np.sqrt(mean_squared_error(y_curr, y_pred_curr))
-    mae_prev = mean_absolute_error(y_prev, y_pred_prev)
-    mae_curr = mean_absolute_error(y_curr, y_pred_curr)
-
-    drift_rmse = rmse_curr - rmse_prev
-
+    # Log dans MLflow (run imbriqué)
     with mlflow.start_run(run_name=f"model_drift_week_{current_week}", nested=True):
-
         mlflow.log_metric("rmse_prev_week", rmse_prev)
         mlflow.log_metric("rmse_curr_week", rmse_curr)
         mlflow.log_metric("mae_prev_week", mae_prev)
         mlflow.log_metric("mae_curr_week", mae_curr)
-
         mlflow.log_metric("model_drift_rmse_abs", drift_rmse)
 
         mlflow.log_metric("model_drift_ks_stat", ks_stat)
@@ -82,5 +123,9 @@ def check_and_log_model_drift(df, current_week, API_URL):
         mlflow.log_metric("model_drift_wasserstein", wd)
 
         mlflow.log_artifact(drift_plot_path)
+
+    print(f"Model drift checked between weeks {prev_week} and {current_week}")
+    print(f"  RMSE prev: {rmse_prev:.2f} | RMSE curr: {rmse_curr:.2f}")
+    print(f"  KS stat: {ks_stat:.4f} | Wasserstein (norm.): {wd:.4f}")
 
     return "model drift checked"
